@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel de Orçamentos - Volaty Turismo</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#1A1A1A; --panel:#2D2D2D; --panel-2:#3A3A3A; --field:#252525;
+    --red:#E74C3C; --red-dim:#C23B2F; --green:#34D399; --green-dim:#1D5B45;
+    --blue:#60A5FA; --blue-dim:#1E3A5F;
+    --ink:#FFFFFF; --muted:#B0B0B0; --line:#404040; --danger:#F87171;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background: linear-gradient(135deg, rgba(26,26,26,0.93) 0%, rgba(45,45,45,0.90) 100%), url('airport-bg.jpg') center/cover fixed;
+    background-attachment: fixed;
+    color:var(--ink); font-family:'Manrope',sans-serif; min-height:100vh; padding-bottom:60px;
+  }
+  .container{ max-width:1200px; margin:0 auto; padding:20px; display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+  @media (max-width:900px){ .container{ grid-template-columns:1fr; } }
+
+  .top{ padding:22px 24px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:12px; margin-bottom:20px; background:var(--panel); border-radius:12px 12px 0 0; }
+  .top .tag{ font-family:'Space Mono',monospace; font-size:11px; color:#000; background:var(--red); padding:4px 10px; border-radius:6px; font-weight:700; letter-spacing:.06em; }
+  .top h1{ font-size:18px; margin:0; font-weight:800; }
+  .top p{ margin:2px 0 0; font-size:13px; color:var(--muted); }
+
+  .section{ background:var(--panel); border:1px solid var(--line); border-radius:12px; overflow:hidden; }
+  .section-title{ padding:16px 20px; border-bottom:1px solid var(--line); font-weight:800; font-size:14px; background:var(--panel-2); }
+  .section-content{ padding:20px; }
+
+  .form-group{ margin-bottom:16px; }
+  .form-group:last-child{ margin-bottom:0; }
+  label{ display:block; font-size:12px; font-weight:600; color:var(--muted); margin-bottom:6px; text-transform:uppercase; letter-spacing:.05em; }
+  input, select, textarea{ width:100%; padding:10px 12px; background:var(--field); border:1px solid var(--line); color:var(--ink); border-radius:8px; font-family:inherit; font-size:13px; }
+  input:focus, select:focus, textarea:focus{ outline:none; border-color:var(--red); box-shadow:0 0 0 2px rgba(231,76,60,0.2); }
+
+  .airport-field{ display:grid; grid-template-columns:1fr 80px; gap:10px; }
+  .airport-field input{ grid-column:1; }
+  .airport-code{ background:var(--red); color:#000; font-weight:800; border-radius:8px; display:flex; align-items:center; justify-content:center; border:none; cursor:default; }
+  .airport-dropdown{ position:relative; margin-top:-5px; }
+  .airport-dropdown div{ background:var(--panel-2); border:1px solid var(--line); border-radius:8px; max-height:150px; overflow-y:auto; position:absolute; width:calc(100% - 90px); z-index:10; display:none; }
+  .airport-dropdown div.show{ display:block; }
+  .airport-option{ padding:8px 12px; cursor:pointer; font-size:12px; border-bottom:1px solid var(--line); }
+  .airport-option:hover{ background:var(--field); }
+  .airport-option:last-child{ border-bottom:none; }
+
+  .fares-list{ display:grid; gap:12px; margin-bottom:16px; }
+  .fare-card{ background:var(--field); border:1px solid var(--line); border-radius:10px; padding:14px; }
+  .fare-card input{ margin-bottom:8px; }
+  .fare-card input:last-child{ margin-bottom:0; }
+  .fare-remove{ background:var(--danger); color:#fff; padding:8px 12px; font-size:12px; border:none; border-radius:6px; cursor:pointer; width:100%; margin-top:8px; font-weight:600; }
+  .fare-remove:hover{ filter:brightness(1.1); }
+
+  .btn{ border:none; border-radius:8px; padding:12px 16px; font-weight:700; font-size:13px; cursor:pointer; font-family:inherit; transition:all .15s; }
+  .btn-primary{ background:var(--red); color:#fff; width:100%; }
+  .btn-primary:hover{ filter:brightness(1.08); }
+  .btn-primary:disabled{ opacity:.5; cursor:not-allowed; }
+  .btn-secondary{ background:transparent; border:1px solid var(--line); color:var(--ink); width:100%; }
+  .btn-secondary:hover{ border-color:var(--red); }
+  .btn-small{ padding:6px 10px; font-size:12px; width:auto; }
+
+  .list-header{ padding:16px 20px; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; align-items:center; background:var(--panel-2); }
+  .list-title{ font-weight:800; font-size:14px; }
+  .list-count{ background:var(--red); color:#fff; padding:4px 10px; border-radius:20px; font-size:12px; font-weight:700; }
+
+  .quote-item{ background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:14px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:flex-start; }
+  .quote-info{ flex:1; }
+  .quote-client{ font-weight:700; font-size:13px; margin-bottom:4px; }
+  .quote-route{ font-family:'Space Mono',monospace; font-size:11px; color:var(--muted); margin-bottom:6px; }
+  .quote-status{ font-size:11px; padding:4px 8px; border-radius:4px; display:inline-block; }
+  .quote-status.pending{ background:rgba(96,165,250,0.2); color:var(--blue); }
+  .quote-status.viewed{ background:rgba(100,116,139,0.2); color:#cbd5e1; }
+  .quote-status.selected{ background:rgba(52,211,153,0.2); color:var(--green); }
+
+  .quote-actions{ display:flex; gap:8px; }
+  .quote-actions button{ padding:6px 10px; font-size:11px; border:none; border-radius:6px; cursor:pointer; font-weight:600; }
+  .action-copy{ background:var(--blue); color:#fff; }
+  .action-copy:hover{ filter:brightness(1.1); }
+  .action-open{ background:var(--red); color:#fff; }
+  .action-open:hover{ filter:brightness(1.1); }
+  .action-delete{ background:var(--danger); color:#fff; }
+  .action-delete:hover{ filter:brightness(1.1); }
+
+  .empty{ color:var(--muted); font-size:13px; padding:30px; text-align:center; }
+
+  .setup-banner{
+    margin: -20px -20px 20px; background: rgba(248,113,113,.12); border-bottom:1px solid rgba(248,113,113,.3);
+    padding:14px 20px; font-size:12px; color:#FCA5A5; line-height:1.7; display:none;
+  }
+  .success-banner{
+    margin: -20px -20px 20px; background: rgba(52,211,153,.12); border-bottom:1px solid rgba(52,211,153,.3);
+    padding:14px 20px; font-size:12px; color:#86EFAC; line-height:1.7; display:none; animation:slideDown .3s ease;
+  }
+  @keyframes slideDown { from { opacity:0; transform:translateY(-10px); } to { opacity:1; transform:translateY(0); } }
+
+  .airports{
+    display:grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .airport-btn{
+    padding: 8px;
+    background: var(--field);
+    border: 1px solid var(--line);
+    color: var(--ink);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .airport-btn:hover{
+    border-color: var(--red);
+  }
+  .airport-btn.selected{
+    background: var(--red);
+    color: #fff;
+    border-color: var(--red);
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  
+  <!-- PAINEL CRIAÇÃO -->
+  <div>
+    <div class="top">
+      <span class="tag">✈ VOLATY</span>
+      <div>
+        <h1>Painel de Orçamentos</h1>
+        <p>Monte o orçamento, envie o link e acompanhe em tempo real</p>
+      </div>
+    </div>
+
+    <div class="setup-banner" id="setupBanner">
+      ⚠️ <strong>Firebase não configurado!</strong> Verifique se o Realtime Database está ativo e as regras foram publicadas.
+    </div>
+
+    <div class="success-banner" id="successBanner">
+      ✅ <strong>Orçamento criado com sucesso!</strong> Copie o link abaixo para enviar ao cliente.
+    </div>
+
+    <div class="section">
+      <div class="section-title">📋 Dados do Orçamento</div>
+      <div class="section-content">
+        
+        <div class="form-group">
+          <label>Nome do Cliente *</label>
+          <input type="text" id="clientName" placeholder="Ex: João Silva">
+        </div>
+
+        <div class="form-group">
+          <label>Agência</label>
+          <input type="text" id="agencyName" placeholder="Ex: Volaty Turismo">
+        </div>
+
+        <div class="form-group">
+          <label>Data da Viagem</label>
+          <input type="date" id="date">
+        </div>
+
+        <div class="form-group">
+          <label>Aeroporto de Origem *</label>
+          <div class="airports" id="originAirports"></div>
+          <div class="airport-field">
+            <input type="text" id="originSearch" placeholder="Buscar aeroporto...">
+            <div class="airport-code" id="originCode">JPA</div>
+          </div>
+          <div class="airport-dropdown">
+            <div id="originDropdown"></div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Aeroporto de Destino *</label>
+          <div class="airports" id="destAirports"></div>
+          <div class="airport-field">
+            <input type="text" id="destSearch" placeholder="Buscar aeroporto...">
+            <div class="airport-code" id="destCode">GRU</div>
+          </div>
+          <div class="airport-dropdown">
+            <div id="destDropdown"></div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Horário de Partida</label>
+          <input type="time" id="departure">
+        </div>
+
+        <div class="form-group">
+          <label>Horário de Chegada</label>
+          <input type="time" id="arrival">
+        </div>
+
+        <div class="form-group">
+          <label>Opções de Preço *</label>
+          <div class="fares-list" id="faresList">
+            <div class="fare-card">
+              <input type="text" placeholder="Ícone (ex: 🎒)" maxlength="2" value="🎒">
+              <input type="text" placeholder="Nome (ex: Básico)" value="Básico">
+              <input type="text" placeholder="Descrição" value="Sem bagagem">
+              <input type="text" placeholder="Preço (ex: 1500)" value="1500">
+              <button class="fare-remove" onclick="removeFare(this)">❌ Remover</button>
+            </div>
+            <div class="fare-card">
+              <input type="text" placeholder="Ícone (ex: 🎁)" maxlength="2" value="🎁">
+              <input type="text" placeholder="Nome (ex: Premium)" value="Premium">
+              <input type="text" placeholder="Descrição" value="Com bagagem incluída">
+              <input type="text" placeholder="Preço (ex: 2500)" value="2500">
+              <button class="fare-remove" onclick="removeFare(this)">❌ Remover</button>
+            </div>
+          </div>
+          <button class="btn btn-secondary btn-small" onclick="addFare()">+ Adicionar Opção</button>
+        </div>
+
+        <button class="btn btn-primary" onclick="createQuote()" style="margin-top:20px;">🚀 Criar Orçamento</button>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- LISTA DE ORÇAMENTOS -->
+  <div>
+    <div class="list-header">
+      <div class="list-title">Orçamentos Enviados</div>
+      <div class="list-count" id="listCount">0</div>
+    </div>
+    <div id="quoteList" style="background:var(--panel); border:1px solid var(--line); border-radius:12px; overflow:hidden;">
+      <div class="empty">Nenhum orçamento ainda. Crie o primeiro ao lado.</div>
+    </div>
+  </div>
+
+</div>
+
+<script type="module">
+  // ============================================================
+  // FIREBASE CONFIGURATION
+  // ============================================================
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
+  import { getDatabase, ref, set, remove, onValue, update } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBhdZWn2O1gcOOdfVmJU7VOw0F3T-Ja-Yc",
+    authDomain: "volaty-c0808.firebaseapp.com",
+    databaseURL: "https://volaty-c0808-default-rtdb.firebaseio.com",
+    projectId: "volaty-c0808",
+    storageBucket: "volaty-c0808.firebasestorage.app",
+    messagingSenderId: "140086466923",
+    appId: "1:140086466923:web:1caa0fee969b601722142e"
+  };
+  // ============================================================
+
+  let db = null;
+  try {
+    const app = initializeApp(firebaseConfig);
+    db = getDatabase(app);
+  } catch (e) {
+    document.getElementById('setupBanner').style.display = 'block';
+  }
+
+  const airports = [
+    { code: 'JPA', city: 'João Pessoa', country: 'Brasil' },
+    { code: 'GRU', city: 'Guarulhos (São Paulo)', country: 'Brasil' },
+    { code: 'GIG', city: 'Galeão (Rio de Janeiro)', country: 'Brasil' },
+    { code: 'BSB', city: 'Brasília', country: 'Brasil' },
+    { code: 'BH', city: 'Belo Horizonte', country: 'Brasil' },
+    { code: 'SSA', city: 'Salvador', country: 'Brasil' },
+    { code: 'REC', city: 'Recife', country: 'Brasil' },
+    { code: 'FOR', city: 'Fortaleza', country: 'Brasil' },
+    { code: 'LIS', city: 'Lisboa', country: 'Portugal' },
+    { code: 'OPO', city: 'Porto', country: 'Portugal' },
+    { code: 'MAD', city: 'Madrid', country: 'Espanha' },
+    { code: 'ORY', city: 'Paris', country: 'França' },
+  ];
+
+  function setupAirportField(searchId, dropdownId, codeId, initialCode) {
+    const searchEl = document.getElementById(searchId);
+    const dropEl = document.getElementById(dropdownId);
+    const codeEl = document.getElementById(codeId);
+
+    searchEl.addEventListener('input', () => {
+      const val = searchEl.value.toUpperCase();
+      const filtered = airports.filter(a => a.code.includes(val) || a.city.toUpperCase().includes(val));
+      dropEl.innerHTML = filtered.map(a => `<div class="airport-option" onclick="selectAirport('${searchId}', '${dropdownId}', '${codeId}', '${a.code}')">${a.code} - ${a.city}</div>`).join('');
+      dropEl.parentElement.classList.toggle('show', filtered.length > 0);
+    });
+
+    codeEl.textContent = initialCode;
+  }
+
+  window.selectAirport = function(searchId, dropdownId, codeId, code) {
+    const airport = airports.find(a => a.code === code);
+    document.getElementById(codeId).textContent = code;
+    document.getElementById(searchId).value = '';
+    document.getElementById(dropdownId).parentElement.classList.remove('show');
+  };
+
+  window.addFare = function() {
+    const faresList = document.getElementById('faresList');
+    const newFare = document.createElement('div');
+    newFare.className = 'fare-card';
+    newFare.innerHTML = `
+      <input type="text" placeholder="Ícone" maxlength="2" value="✈">
+      <input type="text" placeholder="Nome" value="">
+      <input type="text" placeholder="Descrição" value="">
+      <input type="text" placeholder="Preço" value="">
+      <button class="fare-remove" onclick="removeFare(this)">❌ Remover</button>
+    `;
+    faresList.appendChild(newFare);
+  };
+
+  window.removeFare = function(btn) {
+    btn.parentElement.remove();
+  };
+
+  window.createQuote = async function() {
+    if (!db) {
+      alert('Firebase não está configurado!');
+      return;
+    }
+
+    const clientName = document.getElementById('clientName').value.trim();
+    const originCode = document.getElementById('originCode').textContent;
+    const destCode = document.getElementById('destCode').textContent;
+
+    if (!clientName) {
+      alert('Preencha o nome do cliente!');
+      return;
+    }
+
+    if (originCode === '?' || destCode === '?') {
+      alert('Selecione os aeroportos!');
+      return;
+    }
+
+    const fareCards = document.querySelectorAll('.fare-card');
+    if (fareCards.length === 0) {
+      alert('Adicione pelo menos uma opção de preço!');
+      return;
+    }
+
+    const fares = Array.from(fareCards).map((card, i) => ({
+      id: 'fare_' + i,
+      icon: card.querySelector('input').value || '✈',
+      label: card.querySelectorAll('input')[1].value || 'Opção ' + (i+1),
+      sub: card.querySelectorAll('input')[2].value || '',
+      price: parseFloat(card.querySelectorAll('input')[3].value) || 0
+    }));
+
+    const originAirport = airports.find(a => a.code === originCode);
+    const destAirport = airports.find(a => a.code === destCode);
+
+    const data = {
+      clientName,
+      agencyName: document.getElementById('agencyName').value || 'Volaty Turismo',
+      date: document.getElementById('date').value || '',
+      origin: originAirport,
+      destination: destAirport,
+      departure: document.getElementById('departure').value || '',
+      arrival: document.getElementById('arrival').value || '',
+      fares,
+      createdAt: Date.now()
+    };
+
+    const id = Math.random().toString(36).substring(7);
+    const quoteLink = `${window.location.origin}${window.location.pathname.replace('painel_orcamentos_MODERNO.html', 'painel_orcamentos_MODERNO.html').replace(/\/[^\/]*$/, '')}/orcamento_cliente.html?id=${id}`;
+
+    try {
+      await set(ref(db, 'orcamentos/' + id), data);
+      
+      document.getElementById('successBanner').style.display = 'block';
+      setTimeout(() => document.getElementById('successBanner').style.display = 'none', 5000);
+
+      // Copiar link automaticamente
+      const linkBox = prompt('Link gerado! Copie abaixo:\n\n', quoteLink);
+      
+      // Limpar formulário
+      document.getElementById('clientName').value = '';
+      document.getElementById('agencyName').value = '';
+      document.getElementById('date').value = '';
+      document.getElementById('originSearch').value = '';
+      document.getElementById('destSearch').value = '';
+      document.getElementById('departure').value = '';
+      document.getElementById('arrival').value = '';
+      
+    } catch (e) {
+      alert('Erro ao criar orçamento: ' + e.message);
+    }
+  };
+
+  setupAirportField('originSearch', 'originDropdown', 'originCode', 'JPA');
+  setupAirportField('destSearch', 'destDropdown', 'destCode', 'GRU');
+
+  function attachListListener() {
+    if (!db) return;
+    onValue(ref(db, 'orcamentos'), snap => {
+      const val = snap.val() || {};
+      const entries = Object.entries(val).sort((a,b) => (b[1].createdAt||0) - (a[1].createdAt||0));
+      
+      document.getElementById('listCount').textContent = entries.length;
+      
+      if (entries.length === 0) {
+        document.getElementById('quoteList').innerHTML = '<div class="empty">Nenhum orçamento ainda. Crie o primeiro ao lado.</div>';
+        return;
+      }
+
+      document.getElementById('quoteList').innerHTML = entries.map(([id, quote]) => {
+        const selection = quote.selection;
+        let statusText = '⏳ PENDENTE';
+        let statusClass = 'pending';
+        
+        if (quote.viewedAt && selection) {
+          statusText = '✅ ESCOLHEU - ' + selection.label + ' (R$ ' + selection.price.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2}) + ')';
+          statusClass = 'selected';
+        } else if (quote.viewedAt) {
+          statusText = '👁️ VISUALIZADO';
+          statusClass = 'viewed';
+        }
+
+        const quoteLink = `${window.location.origin}${window.location.pathname.replace('painel_orcamentos_MODERNO.html', 'painel_orcamentos_MODERNO.html').replace(/\/[^\/]*$/, '')}/orcamento_cliente.html?id=${id}`;
+
+        return `
+          <div class="quote-item">
+            <div class="quote-info">
+              <div class="quote-client">${quote.clientName}</div>
+              <div class="quote-route">${quote.origin?.code || '?'} → ${quote.destination?.code || '?'}</div>
+              <div class="quote-status ${statusClass}">${statusText}</div>
+            </div>
+            <div class="quote-actions">
+              <button class="action-copy" onclick="copyToClipboard('${quoteLink}')">📋 Link</button>
+              <button class="action-open" onclick="window.open('${quoteLink}', '_blank')">🔗 Abrir</button>
+              <button class="action-delete" onclick="deleteQuote('${id}')">🗑️</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    });
+  }
+
+  window.copyToClipboard = function(text) {
+    navigator.clipboard.writeText(text).then(() => alert('Link copiado!')).catch(e => alert('Erro ao copiar: ' + e));
+  };
+
+  window.deleteQuote = async function(id) {
+    if (!confirm('Excluir este orçamento?')) return;
+    if (!db) return;
+    try {
+      await remove(ref(db, 'orcamentos/' + id));
+    } catch (e) {
+      alert('Erro: ' + e.message);
+    }
+  };
+
+  attachListListener();
+</script>
+
+</body>
+</html>
